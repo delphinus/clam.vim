@@ -37,6 +37,7 @@ function! s:GoToClamBuffer(command) " {{{
     else
         silent! execute winnr . 'wincmd w'
     endif
+    silent! execute 'nnoremap <buffer>q :q<CR>'
 endfunction " }}}
 function! s:ExtractBareCommanName(fullCommand) " {{{
     let j = stridx(a:fullCommand, " ")
