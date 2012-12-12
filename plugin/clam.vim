@@ -93,9 +93,41 @@ function! s:ExeclamNormal(ranged, l1, l2, command) " {{{
         call s:Execlam(a:command)
     endif
 endfunction " }}}
-function! s:Execlam(command, ...) " {{{
+" Regex {{{
+" %(
+"   \<%(cword|cWORD|...)\>
+"   |
+"   %(
+"     \%                     => literal %
+"     |
+"     #%(#|\<?\d*)           => #, ##, #n, #<n
+"   )
+" )
+" %(
+"   :%(
+"       [p8~.htre]         => :p, :h, :r, ...
+"       |
+"       g?s(.).{-}\1.{-}\1 => :s?pat?sub?, :gs?pat?sub?
+"   )
+" )*
+let s:brace = '\<%(cword|cWORD|cfile|afile|abuf|amatch|sfile|slnum)\>'
+let s:special = '%(\%|#%(#|\<?\d*))'
+let s:f_mod = '%(:%([p8~.htre]|g?s(.).{-}\1.{-}\1))*'
+let s:expand = '%(' . s:brace . '|' . s:special . ')' . s:f_mod
+"}}}
+" Function {{{
+
+function! s:ExpandVal(str)
+    " substitute words that don't succeed to a backslash
+    let str = substitute(a:str, '\v%(\\)@<!' . s:expand, '\=expand(submatch(0))', 'g')
+    " delete backslashes
+    let str = substitute(str, '\v\\%(' . s:expand . ')@=', '', 'g')
+    return str
+endfunction
+
+function! s:Execlam(command)
     " Build the actual command string to execute
-    let command = join(map(split(a:command), 'expand(v:val)'))
+    let command = join(map(split(a:command), 's:ExpandVal(v:val)'))
 
     " Run the command
     echo 'Executing: ' . command
